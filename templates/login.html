@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--green-50);padding:1rem;">
+<div style="width:100%;max-width:400px;">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div style="width:64px;height:64px;background:var(--green-600);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:30px;height:30px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </div>
+    <h1 style="font-size:1.75rem;font-weight:700;color:var(--green-900);margin:0">GLAAS</h1>
+    <p style="color:var(--gray-500);font-size:.85rem;margin:.25rem 0 0">Gamified Learning Assessment Alignment System</p>
+    <p style="color:var(--green-700);font-size:.78rem;margin:.15rem 0 0">{{ settings.get('school_name','') }}</p>
+  </div>
+  <div class="card" style="animation:fadeSlideUp .3s ease">
+    <h2 style="font-size:1rem;font-weight:600;color:var(--green-900);margin:0 0 1.25rem">Sign in to continue</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input name="email" type="email" class="form-control" placeholder="you@school.ac.zw" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input name="password" type="password" class="form-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100" style="margin-top:.5rem;justify-content:center;padding:.65rem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+        Sign In
+      </button>
+    </form>
+  </div>
+  <p style="text-align:center;font-size:.72rem;color:var(--gray-500);margin-top:1rem">
+    Research data is confidential. All learner records use anonymous codes only.
+  </p>
+</div>
+</div>
+{% endblock %}

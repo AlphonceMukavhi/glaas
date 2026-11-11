@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Class Report{% endblock %}
+{% block page_title %}Class Alignment Report{% endblock %}
+{% block content %}
+<div class="flex-between mb-2 no-print">
+  <div class="text-muted">{{ settings.get('grade','') }} {{ settings.get('subject','') }} | {{ settings.get('academic_year','') }}</div>
+  <a href="{{ url_for('export_report_csv') }}" class="btn btn-secondary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+    Export CSV
+  </a>
+</div>
+
+<!-- 1. Descriptive Statistics -->
+<div class="card mb-2">
+  <h3 class="card-title mb-2">Table 1: Descriptive Statistics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Assessment</th><th>N</th><th>Mean %</th><th>Median</th><th>Mode</th><th>SD</th><th>Variance</th><th>Min</th><th>Max</th><th>Range</th><th>Skewness</th><th>Kurtosis</th></tr></thead>
+      <tbody>
+      {% for key, label in [('prior','Prior Exercise'),('quizizz','Quizizz Activity'),('exam','Formal Examination')] %}
+      {% set s = desc_stats[key] %}
+      <tr>
+        <td class="fw-600">{{ label }}</td>
+        {% if s %}
+        <td>{{ s.n }}</td><td class="fw-600 text-success">{{ s.mean }}</td><td>{{ s.median }}</td><td>{{ s.mode }}</td>
+        <td>{{ s.sd }}</td><td>{{ s.variance }}</td><td>{{ s.min }}</td><td>{{ s.max }}</td>
+        <td>{{ s.range }}</td><td>{{ s.skewness }}</td><td>{{ s.kurtosis }}</td>
+        {% else %}
+        <td colspan="11" class="text-muted">No data</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 2. Normality -->
+<div class="card mb-2">
+  <h3 class="card-title mb-2">Table 2: Normality Test (Shapiro-Wilk Approximation)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Assessment</th><th>W Statistic</th><th>p (approx.)</th><th>Normal Distribution?</th><th>Note</th></tr></thead>
+      <tbody>
+      {% for key, label in [('prior','Prior Exercise'),('quizizz','Quizizz Activity'),('exam','Formal Examination')] %}
+      {% set n = normality[key] %}
+      <tr>
+        <td class="fw-600">{{ label }}</td>
+        {% if n %}
+        <td>{{ n.W }}</td><td>{{ n.p_value }}</td>
+        <td><span class="badge badge-{{ 'strong' if n.normal else 'weak' }}">{{ 'Yes' if n.normal else 'No' }}</span></td>
+        <td class="text-muted" style="font-size:.78rem">{{ n.note }}</td>
+        {% else %}
+        <td colspan="4" class="text-muted">Insufficient data</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-muted mt-1" style="font-size:.78rem">Correlation method used: <strong>{{ corr_label }}</strong> (selected based on normality assessment)</p>
+</div>
+
+<!-- 3. Correlation Matrix -->
+<div class="card mb-2">
+  <h3 class="card-title mb-2">Table 3: {{ corr_label }} Correlation Matrix</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Comparison</th><th>{{ corr_label }}</th><th>p-value</th><th>Significant (p&lt;.05)?</th><th>Interpretation</th></tr></thead>
+      <tbody>
+      {% for key, label in [('prior_quiz','Prior Exercise vs Quizizz'),('prior_exam','Prior Exercise vs Formal Exam'),('quiz_exam','Quizizz vs Formal Exam')] %}
+      {% set c = corr_matrix[key] %}
+      <tr>
+        <td class="fw-600">{{ label }}</td>
+        {% if c %}
+        <td class="fw-600" style="color:{% if c.r|abs >= 0.7 %}var(--green-700){% elif c.r|abs >= 0.4 %}var(--amber-600){% else %}var(--red-600){% endif %}">{{ c.r }}</td>
+        <td>{{ c.p_value }}</td>
+        <td><span class="badge badge-{{ 'strong' if c.significant else 'weak' }}">{{ 'Yes' if c.significant else 'No' }}</span></td>
+        <td>{{ c.interpretation }}</td>
+        {% else %}
+        <td colspan="4" class="text-muted">Insufficient data (n &lt; 3)</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 4. Objective Alignment -->
+<div class="card mb-2">
+  <h3 class="card-title mb-2">Table 4: Curriculum Objective Alignment Analysis</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Code</th><th>Objective</th><th>Prior Mean%</th><th>Quizizz Mean%</th><th>Exam Mean%</th><th>Q-E Correlation</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for row in obj_report %}
+      <tr>
+        <td class="fw-600" style="color:var(--green-700)">{{ row.code }}</td>
+        <td>{{ row.title }}</td>
+        <td>{{ row.prior_mean or '—' }}</td>
+        <td>{{ row.quiz_mean  or '—' }}</td>
+        <td>{{ row.exam_mean  or '—' }}</td>
+        <td class="fw-600">{{ row.r_str }}{% if row.significant %} *{% endif %}</td>
+        <td><span class="badge badge-{{ row.status }}">{{ row.status }}</span></td>
+      </tr>
+      <tr style="background:var(--green-50)">
+        <td colspan="7">
+          <div class="recommendation {{ row.status if row.status in ['weak','moderate'] else '' }}">
+            <strong>Recommendation:</strong> {{ row.recommendation }}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-muted mt-1" style="font-size:.75rem">* p &lt; 0.05 (statistically significant)</p>
+</div>
+
+<!-- 5. Scatter plot -->
+<div class="grid-2">
+  <div class="card">
+    <h3 class="card-title mb-2">Figure 1: Quizizz vs Formal Exam Scatter Plot</h3>
+    <div style="height:320px"><canvas id="scatterChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="card-title mb-2">Figure 2: Class Progression (Prior → Quizizz → Exam)</h3>
+    <div style="height:320px"><canvas id="progChart"></canvas></div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const scatterData = {{ scatter|safe }};
+const r = {{ corr_matrix.quiz_exam.r if corr_matrix.quiz_exam else 'null' }};
+drawScatter('scatterChart', scatterData, r);
+
+// Progression chart
+const summaries = {{ learner_summaries|tojson }};
+const filtered = summaries.filter(l=>l.prior_pct!==null&&l.quiz_pct!==null&&l.exam_pct!==null);
+if (filtered.length) {
+  new Chart(document.getElementById('progChart'), {
+    type: 'line',
+    data: {
+      labels: ['Prior Exercise','Quizizz Activity','Formal Exam'],
+      datasets: filtered.slice(0,6).map((l,i)=>({
+        label: l.code,
+        data: [l.prior_pct, l.quiz_pct, l.exam_pct],
+        borderColor: `hsl(${140+i*15},60%,${40+i*5}%)`,
+        tension: .35, pointRadius: 5, fill: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { min:0, max:100, title:{display:true,text:'Score (%)'} } },
+      plugins: { legend: { position:'bottom' } }
+    }
+  });
+}
+</script>
+{% endblock %}

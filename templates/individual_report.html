@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Learner Report{% endblock %}
+{% block page_title %}Individual Learner Report{% endblock %}
+{% block content %}
+<div class="card mb-2 no-print">
+  <form method="GET" style="display:flex;gap:.75rem;align-items:flex-end">
+    <div class="form-group" style="flex:1;margin:0">
+      <label class="form-label">Select Learner</label>
+      <select name="learner_id" class="form-control" onchange="this.form.submit()">
+        <option value="">— Choose learner —</option>
+        {% for l in learners %}<option value="{{ l.id }}" {{ 'selected' if learner_id==l.id }}>{{ l.code }} ({{ l.gender }})</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+{% if selected and learner_data %}
+<div class="grid-3 mb-2">
+  {% for label, key, ring_id in [('Prior Exercise','prior','ring1'),('Quizizz Activity','quiz','ring2'),('Formal Exam','exam','ring3')] %}
+  {% set val = learner_data[key] %}
+  <div class="card" style="text-align:center">
+    <div class="ring-wrap">
+      <svg id="{{ ring_id }}" viewBox="0 0 76 76" width="76" height="76"></svg>
+      <div class="ring-value">{{ val or '—' }}{% if val %}<span style="font-size:.9rem">%</span>{% endif %}</div>
+      <div class="ring-label">{{ label }}</div>
+      {% set rank_key = 'rank_' + key + '_pct' %}
+      {% if learner_data.get(rank_key) %}
+      <div class="text-muted" style="font-size:.72rem">Rank {{ learner_data[rank_key] }} of {{ learner_data.n_learners }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if learner_data.prior and learner_data.quiz and learner_data.exam %}
+<div class="card mb-2">
+  <h3 class="card-title mb-1">Learning Progression</h3>
+  {% set growth = learner_data.exam - learner_data.prior %}
+  <div class="flex gap-md" style="font-size:.9rem">
+    <span>Prior → Quizizz: <strong class="{{ 'text-success' if learner_data.quiz >= learner_data.prior else 'text-danger' }}">{{ '+' if learner_data.quiz >= learner_data.prior else '' }}{{ (learner_data.quiz - learner_data.prior)|round(1) }}%</strong></span>
+    <span>Quizizz → Exam: <strong class="{{ 'text-success' if learner_data.exam >= learner_data.quiz else 'text-danger' }}">{{ '+' if learner_data.exam >= learner_data.quiz else '' }}{{ (learner_data.exam - learner_data.quiz)|round(1) }}%</strong></span>
+    <span>Overall Growth: <strong class="{{ 'text-success' if growth >= 0 else 'text-danger' }}">{{ '+' if growth >= 0 else '' }}{{ growth|round(1) }}%</strong></span>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2 mb-2">
+  <div class="card">
+    <h3 class="card-title mb-2">Performance by Curriculum Objective</h3>
+    <div style="height:300px"><canvas id="objChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="card-title mb-2">Learner vs Class Mean</h3>
+    <div style="height:300px"><canvas id="vsChart"></canvas></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="card-title mb-2">Objective Breakdown — Learner {{ selected.code }}</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Code</th><th>Objective</th><th>Prior %</th><th>Quizizz %</th><th>Exam %</th><th>Growth</th><th>Trend</th><th>vs Class (Exam)</th></tr></thead>
+      <tbody>
+      {% for row in learner_data.obj_breakdown %}
+      <tr>
+        <td class="fw-600" style="color:var(--green-700)">{{ row.code }}</td>
+        <td>{{ row.title }}</td>
+        <td>{{ row.learner_prior or '—' }}</td>
+        <td>{{ row.learner_quiz  or '—' }}</td>
+        <td>{{ row.learner_exam  or '—' }}</td>
+        <td>{% if row.growth is not none %}<span class="{{ 'text-success' if row.growth>=0 else 'text-danger' }}">{{ '+' if row.growth>=0 else '' }}{{ row.growth }}%</span>{% else %}—{% endif %}</td>
+        <td><span class="badge badge-{{ row.trend or 'insufficient' }}">{{ row.trend or '—' }}</span></td>
+        <td>
+          {% if row.learner_exam is not none and row.class_exam is not none %}
+          {% set diff = row.learner_exam - row.class_exam %}
+          <span class="{{ 'text-success' if diff>=0 else 'text-danger' }}">{{ '+' if diff>=0 else '' }}{{ diff|round(1) }}%</span>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% elif learner_id %}
+<div class="card"><div class="empty-state"><p>No score data found for this learner.</p><p>Enter scores via Data Entry first.</p></div></div>
+{% else %}
+<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Select a learner above to view their individual report.</p></div></div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+{% if learner_data and learner_data.obj_breakdown %}
+<script>
+const bd = {{ learner_data.obj_breakdown|tojson }};
+const labels = bd.map(r=>r.code);
+
+drawGroupedBar('objChart', labels, [
+  {label:'Prior Exercise', data: bd.map(r=>r.learner_prior||0)},
+  {label:'Quizizz',        data: bd.map(r=>r.learner_quiz||0)},
+  {label:'Formal Exam',    data: bd.map(r=>r.learner_exam||0)},
+]);
+drawGroupedBar('vsChart', labels, [
+  {label:'Learner Exam %', data: bd.map(r=>r.learner_exam||0)},
+  {label:'Class Exam %',   data: bd.map(r=>r.class_exam||0)},
+]);
+
+// Rings
+{% if learner_data.prior %} drawRing('ring1', {{ learner_data.prior }}, '#16a34a'); {% endif %}
+{% if learner_data.quiz  %} drawRing('ring2', {{ learner_data.quiz }},  '#4ade80'); {% endif %}
+{% if learner_data.exam  %} drawRing('ring3', {{ learner_data.exam }},  '#15803d'); {% endif %}
+</script>
+{% endif %}
+{% endblock %}

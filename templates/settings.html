@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <div class="card">
+    <h3 class="card-title mb-2">System Configuration</h3>
+    <form method="POST">
+      {% for key, label, placeholder in [('school_name','School Name','Your school name'),('researcher_name','Researcher Name','Your name'),('academic_year','Academic Year','2025'),('study_title','Study Title','Enhancing Students\' STEM Performance...'),('grade','Grade','Grade 7'),('subject','Subject','Science')] %}
+      <div class="form-group"><label class="form-label">{{ label }}</label><input name="{{ key }}" class="form-control" value="{{ settings.get(key,'') }}" placeholder="{{ placeholder }}"></div>
+      {% endfor %}
+      <h3 class="card-title mt-2 mb-2">Change Password</h3>
+      <div class="form-group"><label class="form-label">New Password</label><input name="new_password" type="password" class="form-control" placeholder="Leave blank to keep current"></div>
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </form>
+  </div>
+
+  <div>
+    <div class="card mb-2">
+      <h3 class="card-title mb-2">Demo Data</h3>
+      <p class="text-muted mb-2" style="font-size:.82rem">Load realistic Grade 7 Science demo data (20 learners, 8 objectives, 1440 score records). Clears existing data.</p>
+      <form method="POST" action="{{ url_for('seed_data') }}" id="seedForm">
+        <button type="button" class="btn btn-secondary" onclick="confirmDelete('seedForm','This will replace all existing data with demo data. Continue?')">Load Demo Data</button>
+      </form>
+    </div>
+
+    <div class="card mb-2" style="border-color:#fca5a5">
+      <h3 class="card-title mb-2" style="color:var(--red-600)">Danger Zone</h3>
+      <p class="text-muted mb-2" style="font-size:.82rem">Permanently delete all score records. Learners, objectives and items are kept.</p>
+      <form method="POST" action="{{ url_for('clear_scores') }}" id="clearForm">
+        <input name="confirm" id="clearConfirm" type="hidden" value="">
+        <button type="button" class="btn btn-danger" onclick="var v=prompt('Type DELETE to confirm clearing all scores:');if(v==='DELETE'){document.getElementById(\'clearConfirm\').value=\'DELETE\';document.getElementById(\'clearForm\').submit();}">Clear All Scores</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title mb-2">Recent CSV Imports</h3>
+      {% if imports %}
+      <div class="table-wrap"><table>
+        <thead><tr><th>File</th><th>Type</th><th>Rows</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+        {% for i in imports %}
+        <tr>
+          <td>{{ i.filename or '—' }}</td>
+          <td>{{ i.assessment_type or '—' }}</td>
+          <td>{{ i.rows_imported }}</td>
+          <td><span class="badge badge-{{ 'strong' if i.status=='success' else ('moderate' if i.status=='partial' else 'weak') }}">{{ i.status }}</span></td>
+          <td class="text-muted" style="font-size:.75rem">{{ i.imported_at[:16] }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+      <p class="text-muted">No imports yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}TAM Survey{% endblock %}
+{% block page_title %}GLAAS Evaluation Questionnaire{% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <p style="font-size:.85rem;color:var(--gray-500);margin-bottom:1.5rem">This questionnaire evaluates GLAAS using the Technology Acceptance Model (Davis, 1989). All responses are confidential and will be reported anonymously. SD=Strongly Disagree, D=Disagree, N=Neutral, A=Agree, SA=Strongly Agree</p>
+  <form method="POST">
+    <div class="form-group">
+      <label class="form-label">Respondent Role *</label>
+      <select name="respondent_role" class="form-control" required>
+        <option value="teacher">Science Teacher</option>
+        <option value="principal">School Principal</option>
+      </select>
+    </div>
+
+    <h3 style="font-size:.9rem;font-weight:600;color:var(--green-800);margin:1.5rem 0 .75rem;border-bottom:1px solid var(--green-200);padding-bottom:.5rem">Section A: Perceived Usefulness</h3>
+    {% for num, q in [(1,'GLAAS provides information that is useful for understanding how learners perform on specific curriculum objectives.'),(2,'The GLAAS alignment reports help me identify which curriculum topics need more instructional attention.'),(3,'GLAAS makes it easier to evaluate whether gamified science activities contribute to curriculum mastery.'),(4,'GLAAS reports provide a clearer picture of learner progress than the gamified platform alone.'),(5,'I would recommend using a system like GLAAS to align gamified activities with formal assessment outcomes.')] %}
+    <div class="mb-2">
+      <div style="font-size:.87rem;margin-bottom:.5rem"><strong>{{ num }}.</strong> {{ q }}</div>
+      <div class="likert-options">
+        {% for val, lbl in [(1,'SD'),(2,'D'),(3,'N'),(4,'A'),(5,'SA')] %}
+        <label class="likert-opt"><input type="radio" name="q{{ num }}" value="{{ val }}" required><span>{{ lbl }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <h3 style="font-size:.9rem;font-weight:600;color:var(--green-800);margin:1.5rem 0 .75rem;border-bottom:1px solid var(--green-200);padding-bottom:.5rem">Section B: Perceived Ease of Use</h3>
+    {% for num, q in [(6,'The GLAAS interface is straightforward to navigate.'),(7,'The reports produced by GLAAS are easy to read and interpret.'),(8,'I would be able to use GLAAS independently after initial training.')] %}
+    <div class="mb-2">
+      <div style="font-size:.87rem;margin-bottom:.5rem"><strong>{{ num }}.</strong> {{ q }}</div>
+      <div class="likert-options">
+        {% for val, lbl in [(1,'SD'),(2,'D'),(3,'N'),(4,'A'),(5,'SA')] %}
+        <label class="likert-opt"><input type="radio" name="q{{ num }}" value="{{ val }}" required><span>{{ lbl }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <h3 style="font-size:.9rem;font-weight:600;color:var(--green-800);margin:1.5rem 0 .75rem;border-bottom:1px solid var(--green-200);padding-bottom:.5rem">Section C: Curriculum Alignment</h3>
+    {% for num, q in [(9,'The Quizizz activity questions appeared to be well aligned with the curriculum topics assessed in the formal examination.'),(10,'The gamified activity format allowed learners to demonstrate their curriculum knowledge effectively.')] %}
+    <div class="mb-2">
+      <div style="font-size:.87rem;margin-bottom:.5rem"><strong>{{ num }}.</strong> {{ q }}</div>
+      <div class="likert-options">
+        {% for val, lbl in [(1,'SD'),(2,'D'),(3,'N'),(4,'A'),(5,'SA')] %}
+        <label class="likert-opt"><input type="radio" name="q{{ num }}" value="{{ val }}" required><span>{{ lbl }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <h3 style="font-size:.9rem;font-weight:600;color:var(--green-800);margin:1.5rem 0 .75rem;border-bottom:1px solid var(--green-200);padding-bottom:.5rem">Section D: Open-Ended Questions</h3>
+    {% for num, q in [(11,'In what ways could GLAAS information improve how you plan or adjust your science lessons?'),(12,'Were there curriculum topics where you felt the Quizizz activity and formal examination were not well aligned? If so, which ones and why?'),(13,'What improvements would you suggest to GLAAS or the gamified activity design?'),(14,'(Principal only) How would GLAAS reports help you evaluate whether investments in gamified learning platforms are worthwhile?')] %}
+    <div class="form-group">
+      <label class="form-label">{{ num }}. {{ q }}</label>
+      <textarea name="q{{ num }}" class="form-control" rows="3" placeholder="Your response..."></textarea>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary mt-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Submit Response
+    </button>
+  </form>
+</div>
+{% endblock %}

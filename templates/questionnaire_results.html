@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Survey Results{% endblock %}
+{% block page_title %}TAM Survey Results{% endblock %}
+{% block content %}
+{% if summary %}
+<div class="card mb-2">
+  <h3 class="card-title mb-2">TAM Dimension Means (Scale: 1=Strongly Disagree, 5=Strongly Agree)</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Dimension</th><th>Questions</th><th>Mean Score</th><th>Interpretation</th></tr></thead>
+    <tbody>
+    {% set pu = ((summary.q1_useful or 0)+(summary.q2_curriculum or 0)+(summary.q3_mastery or 0)+(summary.q4_clearer or 0)+(summary.q5_recommend or 0))/5 %}
+    {% set pe = ((summary.q6_easy_nav or 0)+(summary.q7_easy_read or 0)+(summary.q8_independent or 0))/3 %}
+    {% set ca = ((summary.q9_quiz_aligned or 0)+(summary.q10_quiz_effective or 0))/2 %}
+    <tr><td class="fw-600">Perceived Usefulness</td><td>Q1–Q5</td><td class="fw-600 text-success">{{ '%.2f'|format(pu) }}</td><td>{{ 'High' if pu >= 4 else ('Moderate' if pu >= 3 else 'Low') }} perceived usefulness</td></tr>
+    <tr><td class="fw-600">Perceived Ease of Use</td><td>Q6–Q8</td><td class="fw-600 text-success">{{ '%.2f'|format(pe) }}</td><td>{{ 'High' if pe >= 4 else ('Moderate' if pe >= 3 else 'Low') }} ease of use perception</td></tr>
+    <tr><td class="fw-600">Curriculum Alignment</td><td>Q9–Q10</td><td class="fw-600 text-success">{{ '%.2f'|format(ca) }}</td><td>{{ 'Strong' if ca >= 4 else ('Moderate' if ca >= 3 else 'Weak') }} alignment perception</td></tr>
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<div class="card mb-2">
+  <div class="card-header"><h3 class="card-title">All Responses ({{ responses|length }})</h3><a href="{{ url_for('questionnaire') }}" class="btn btn-primary btn-sm">+ New Response</a></div>
+  {% if responses %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Role</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th><th>Q7</th><th>Q8</th><th>Q9</th><th>Q10</th><th>Submitted</th></tr></thead>
+    <tbody>
+    {% for r in responses %}
+    <tr>
+      <td class="fw-600">{{ r.respondent_role|title }}</td>
+      {% for col in ['q1_useful','q2_curriculum','q3_mastery','q4_clearer','q5_recommend','q6_easy_nav','q7_easy_read','q8_independent','q9_quiz_aligned','q10_quiz_effective'] %}
+      <td>{{ r[col] or '—' }}</td>
+      {% endfor %}
+      <td class="text-muted" style="font-size:.75rem;white-space:nowrap">{{ r.submitted_at[:16] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="empty-state"><p>No responses yet.</p></div>
+  {% endif %}
+</div>
+
+{% if responses %}
+<div class="card">
+  <h3 class="card-title mb-2">Open-Ended Responses</h3>
+  {% for r in responses %}
+  <div style="border:1px solid var(--green-200);border-radius:10px;padding:1rem;margin-bottom:.75rem">
+    <div class="fw-600 mb-1" style="color:var(--green-800)">{{ r.respondent_role|title }} — {{ r.submitted_at[:16] }}</div>
+    {% if r.q11_open %}<p class="text-muted" style="font-size:.82rem"><strong>Q11:</strong> {{ r.q11_open }}</p>{% endif %}
+    {% if r.q12_open %}<p class="text-muted" style="font-size:.82rem"><strong>Q12:</strong> {{ r.q12_open }}</p>{% endif %}
+    {% if r.q13_open %}<p class="text-muted" style="font-size:.82rem"><strong>Q13:</strong> {{ r.q13_open }}</p>{% endif %}
+    {% if r.q14_open %}<p class="text-muted" style="font-size:.82rem"><strong>Q14:</strong> {{ r.q14_open }}</p>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

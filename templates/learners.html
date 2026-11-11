@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Learners{% endblock %}
+{% block page_title %}Learners{% endblock %}
+{% block content %}
+<div class="flex-between mb-2 no-print">
+  <div class="flex gap-sm">
+    {% if session.get('role')=='researcher' %}
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').style.display='flex'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+      Add Learner
+    </button>
+    <button class="btn btn-secondary" onclick="document.getElementById('importModal').style.display='flex'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+      Import CSV
+    </button>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('export_csv') }}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+    Export CSV
+  </a>
+</div>
+
+<div class="card">
+{% if learners %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Code</th><th>Gender</th><th>Prior %</th><th>Quizizz %</th><th>Exam %</th><th>Growth</th><th>Trend</th><th>Data</th>{% if session.get('role')=='researcher' %}<th class="no-print">Actions</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for l in learners %}
+    <tr>
+      <td><a href="{{ url_for('individual_report', learner_id=l.id) }}" class="fw-600" style="color:var(--green-700);text-decoration:none">{{ l.code }}</a></td>
+      <td>{{ l.gender }}</td>
+      <td class="score-cell {% if l.prior_pct %}entered{% endif %}">{{ l.prior_pct or '—' }}</td>
+      <td class="score-cell {% if l.quiz_pct %}entered{% endif %}">{{ l.quiz_pct  or '—' }}</td>
+      <td class="score-cell {% if l.exam_pct %}entered{% endif %}">{{ l.exam_pct  or '—' }}</td>
+      <td>{% if l.growth is not none %}<span class="{{ 'text-success' if l.growth>=0 else 'text-danger' }}">{{ '+' if l.growth>=0 else '' }}{{ l.growth }}%</span>{% else %}—{% endif %}</td>
+      <td><span class="badge badge-{{ l.trend or 'insufficient' }}">{{ l.trend or '—' }}</span></td>
+      <td>
+        {% set cnt = l.completeness %}
+        <span class="badge badge-{{ 'complete' if cnt==3 else ('partial' if cnt>0 else 'none') }}">{{ cnt }}/3</span>
+      </td>
+      {% if session.get('role')=='researcher' %}
+      <td class="no-print">
+        <form method="POST" action="{{ url_for('delete_learner', lid=l.id) }}" id="del_{{ l.id }}" style="display:inline">
+          <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('del_{{ l.id }}','Remove learner {{ l.code }} and all their scores?')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </form>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No learners yet.</p><p>Add learners or import a CSV to get started.</p></div>
+{% endif %}
+</div>
+
+<!-- Add modal -->
+<div class="modal-backdrop" id="addModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <h3 class="modal-title">Add Learner</h3>
+    <form method="POST" action="{{ url_for('add_learner') }}">
+      <div class="form-group"><label class="form-label">Learner Code *</label><input name="code" class="form-control" placeholder="L01" required></div>
+      <div class="form-group"><label class="form-label">Full Name</label><input name="full_name" class="form-control" placeholder="Used to match Wayground imports"></div>
+      <div class="form-group"><label class="form-label">Gender</label>
+        <select name="gender" class="form-control"><option>Unspecified</option><option value="M">Male</option><option value="F">Female</option></select>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="document.getElementById('addModal').style.display='none'">Cancel</button><button type="submit" class="btn btn-primary">Add</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-backdrop" id="importModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <h3 class="modal-title">Import Learners from File</h3>
+    <p class="text-muted mb-2">CSV or XLSX with columns: <code>learnerCode</code>, <code>fullName</code>, <code>gender</code></p>
+    <form method="POST" action="{{ url_for('import_learners') }}" enctype="multipart/form-data">
+      <div class="form-group"><input type="file" name="csv_file" accept=".csv,.xlsx" class="form-control" required></div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="document.getElementById('importModal').style.display='none'">Cancel</button><button type="submit" class="btn btn-primary">Import</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}GLAAS{% endblock %} — Gamified Learning Assessment Alignment System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+{% if current_user %}
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <a href="{{ url_for('dashboard') }}" class="sidebar-brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </div>
+    <span class="brand-text">GLAAS</span>
+  </a>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint=='dashboard' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="nav-text">Dashboard</span>
+    </a>
+
+    <div class="nav-label">Data</div>
+    <a href="{{ url_for('learners') }}" class="nav-item {% if request.endpoint in ['learners','add_learner'] %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="nav-text">Learners</span>
+    </a>
+    <a href="{{ url_for('objectives') }}" class="nav-item {% if request.endpoint=='objectives' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span class="nav-text">Objectives</span>
+    </a>
+    {% if session.get('role') == 'researcher' %}
+    <a href="{{ url_for('data_entry') }}" class="nav-item {% if request.endpoint in ['data_entry','save_scores','add_item'] %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+      <span class="nav-text">Data Entry</span>
+    </a>
+    {% endif %}
+
+    <div class="nav-label">Reports</div>
+    <a href="{{ url_for('reports') }}" class="nav-item {% if request.endpoint=='reports' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+      <span class="nav-text">Class Report</span>
+    </a>
+    <a href="{{ url_for('individual_report') }}" class="nav-item {% if request.endpoint=='individual_report' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span class="nav-text">Learner Report</span>
+    </a>
+    <a href="{{ url_for('questionnaire') }}" class="nav-item {% if request.endpoint in ['questionnaire','questionnaire_results'] %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="nav-text">TAM Survey</span>
+    </a>
+
+    {% if session.get('role') == 'researcher' %}
+    <div class="nav-label">System</div>
+    <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint=='settings' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="nav-text">Settings</span>
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('logout') }}" class="nav-item" style="color:var(--red-600)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+      <span class="nav-text">Sign Out</span>
+    </a>
+    <button class="sidebar-toggle mt-1" onclick="toggleSidebar()" id="toggleBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="nav-text">Collapse</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-content" id="mainContent">
+  <div class="topbar">
+    <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="user-avatar">{{ (session.get('display_name','U')[:1]).upper() }}</div>
+        <span class="nav-text">{{ session.get('display_name','') }}</span>
+        <span class="badge badge-strong" style="margin-left:.25rem">{{ session.get('role','') }}</span>
+      </div>
+      <button onclick="window.print()" class="btn btn-secondary btn-sm no-print">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+        Print
+      </button>
+    </div>
+  </div>
+
+  <div class="page-body page-enter">
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }}">
+      {% if cat == 'success' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>{% endif %}
+      {% if cat == 'danger' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>{% endif %}
+      {% if cat == 'warning' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>{% endif %}
+      {{ msg }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Print header -->
+    <div class="print-header" style="margin-bottom:1rem;border-bottom:2px solid #16a34a;padding-bottom:.75rem;">
+      <div style="font-size:1.1rem;font-weight:700;color:#14532d">{{ settings.get('study_title','GLAAS Report') }}</div>
+      <div style="font-size:.85rem;color:#374151">{{ settings.get('school_name','') }} | {{ settings.get('grade','') }} {{ settings.get('subject','') }} | Academic Year {{ settings.get('academic_year','') }}</div>
+      <div style="font-size:.8rem;color:#6b7280">Researcher: {{ settings.get('researcher_name','') }} | Generated: {{ now.strftime('%d %B %Y') }}</div>
+    </div>
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const m = document.getElementById('mainContent');
+  s.classList.toggle('collapsed');
+  m.classList.toggle('collapsed');
+  localStorage.setItem('sidebar_collapsed', s.classList.contains('collapsed'));
+}
+// Restore state
+if (localStorage.getItem('sidebar_collapsed') === 'true') {
+  document.getElementById('sidebar').classList.add('collapsed');
+  document.getElementById('mainContent').classList.add('collapsed');
+}
+
+// Tab switching
+function switchTab(group, tabId) {
+  document.querySelectorAll(`[data-tab-group="${group}"]`).forEach(el => {
+    el.classList.remove('active');
+  });
+  document.querySelectorAll(`[data-panel-group="${group}"]`).forEach(el => {
+    el.classList.remove('active');
+  });
+  document.querySelector(`[data-tab-group="${group}"][data-tab="${tabId}"]`).classList.add('active');
+  document.querySelector(`[data-panel-group="${group}"][data-panel="${tabId}"]`).classList.add('active');
+}
+
+// Confirm modals
+function confirmDelete(formId, message) {
+  if (confirm(message || 'Are you sure?')) {
+    document.getElementById(formId).submit();
+  }
+}
+
+// Score matrix: enforce max
+document.addEventListener('input', function(e) {
+  if (e.target.classList.contains('matrix-input')) {
+    const max = parseFloat(e.target.dataset.max || 99);
+    const val = parseFloat(e.target.value);
+    e.target.classList.toggle('over-max', !isNaN(val) && val > max);
+    e.target.classList.toggle('has-value', e.target.value !== '');
+  }
+});
+
+// Scatter chart utility
+function drawScatter(canvasId, data, rValue) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx || !data || data.length === 0) return;
+  // Regression line
+  const n = data.length;
+  const xs = data.map(d=>d.x), ys = data.map(d=>d.y);
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  const num = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
+  const den = xs.reduce((s,x)=>s+(x-mx)**2,0);
+  const slope = den ? num/den : 0;
+  const intercept = my - slope*mx;
+  const lineData = [0, 100].map(x=>({x, y: slope*x+intercept}));
+
+  new Chart(ctx, {
+    data: {
+      datasets: [
+        { type: 'scatter', label: 'Learners',
+          data: data.map(d=>({x:d.x, y:d.y, label:d.code})),
+          backgroundColor: 'rgba(22,163,74,.65)',
+          pointRadius: 6, pointHoverRadius: 8 },
+        { type: 'line', label: `Regression (r=${rValue||'—'})`,
+          data: lineData,
+          borderColor: 'rgba(22,163,74,.4)',
+          borderDash: [5,4], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return d.label ? `${d.label}: Quizizz ${d.x}%, Exam ${d.y}%` : `(${d.x}, ${d.y})`;
+            }
+          }
+        },
+        legend: { position: 'bottom' }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Quizizz Score (%)' }, min: 0, max: 100 },
+        y: { title: { display: true, text: 'Exam Score (%)' },    min: 0, max: 100 }
+      }
+    }
+  });
+}
+
+// Bar chart utility
+function drawGroupedBar(canvasId, labels, datasets) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  const COLORS = ['rgba(22,163,74,.75)','rgba(74,222,128,.8)','rgba(187,247,208,.9)'];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: datasets.map((ds,i)=>({
+        ...ds,
+        backgroundColor: COLORS[i] || COLORS[0],
+        borderRadius: 5, borderSkipped: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        y: { min: 0, max: 100, title: { display: true, text: 'Mean Score (%)' } }
+      }
+    }
+  });
+}
+
+// Progress ring
+function drawRing(svgId, pct, color) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const r = 30, c = 2*Math.PI*r;
+  svg.innerHTML = `
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="#dcfce7" stroke-width="7"/>
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="${color||'#16a34a'}" stroke-width="7"
+      stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct/100)}"
+      stroke-linecap="round" transform="rotate(-90 38 38)"
+      style="transition:stroke-dashoffset .6s ease"/>
+  `;
+}
+</script>
+
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

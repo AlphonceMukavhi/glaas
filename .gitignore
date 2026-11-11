@@ -1,0 +1,6 @@
+database/*.db
+__pycache__/
+.venv/
+.env
+*.xlsx
+*.csv
